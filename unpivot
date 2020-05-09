@@ -1,0 +1,25 @@
+SELECT etl.table_fields ('dtp_crash','etl')
+
+---- функция возвращает массив столбцов
+
+CREATE OR REPLACE FUNCTION etl.table_fields (tbl varchar, own varchar) RETURNS varchar []  AS
+$body$
+DECLARE
+  ret varchar[];
+  row varchar;
+ curs  CURSOR FOR SELECT  a.attname::varchar  field
+    FROM pg_attribute a, pg_class c, pg_type t, pg_namespace n
+    WHERE n.nspname = own AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid AND n.oid = c.relnamespace and c.relname::varchar=tbl
+    order by 1;
+begin
+open curs;
+  LOOP
+    FETCH FROM curs INTO row;
+    EXIT WHEN NOT FOUND;
+    ret := array_append(ret,row);
+  END LOOP;
+  RETURN ret;
+END;
+    $body$
+LANGUAGE 'plpgsql'
+
