@@ -1,0 +1,41 @@
+--- вызвать написанную функцию
+select   unnest(etl.split_str(FACTOR,',')) from  etl.dtp_crash where  kartid='187629596'
+
+---- аналог через regexp_split_to_array
+select  unnest(regexp_split_to_array(replace(replace(FACTOR,'"]',''),'["',''), '","'))   from  etl.dtp_crash
+
+
+------   функция  возвращает массив
+
+CREATE OR REPLACE FUNCTION etl.split_str (str varchar, separator char) RETURNS varchar []  AS
+$body$
+DECLARE
+       ret varchar[];
+       i int2;
+       c int2;
+       tmp_val varchar(255) := '';
+       char_m char;
+       char_l char;
+       char_r char;
+       len int2;
+BEGIN
+  i := 2;
+  c := 1;
+  len = length(str) - 1 ;
+    WHILE i <= len LOOP
+      char_m := substr(str, i, 1);
+      char_l := substr(str, i-1, 1);
+      char_r := substr(str, i+1, 1);
+        IF (char_m = separator and char_l ='"' and  char_r ='"') OR i = len THEN
+          ret[c] := tmp_val;
+          tmp_val := '';
+          c := c + 1;
+        ELSE
+          tmp_val := tmp_val || char_m;
+        END IF;
+      i := i + 1;
+    END LOOP;
+  RETURN ret;
+END;
+$body$
+LANGUAGE 'plpgsql' 
