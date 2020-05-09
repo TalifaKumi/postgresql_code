@@ -1,7 +1,7 @@
 --SELECT etl.table_fields ('dtp_crash','etl')
 ---- функция возвращает массив столбцов
 
-CREATE OR REPLACE FUNCTION etl.table_fields (tbl varchar, own varchar) RETURNS varchar []  AS
+CREATE OR REPLACE FUNCTION table_fields (tbl varchar, own varchar) RETURNS varchar []  AS
 $body$
 DECLARE
   ret varchar[];
