@@ -1,5 +1,4 @@
-SELECT etl.table_fields ('dtp_crash','etl')
-
+--SELECT etl.table_fields ('dtp_crash','etl')
 ---- функция возвращает массив столбцов
 
 CREATE OR REPLACE FUNCTION etl.table_fields (tbl varchar, own varchar) RETURNS varchar []  AS
@@ -22,4 +21,33 @@ open curs;
 END;
     $body$
 LANGUAGE 'plpgsql'
+
+--SELECT etl.table_values ('dtp_crash','etl','kartid','187568933')
+-- функция возвращает массив строк
+
+CREATE OR REPLACE FUNCTION etl.table_values (tbl varchar, own varchar,  keyf varchar, keyv varchar ) RETURNS varchar []  AS
+$body$
+DECLARE
+   ret varchar[];
+   row_fields varchar[];
+   row_values varchar ;
+    owntbl varchar;
+begin
+ owntbl := own||'.'||'tbl';
+EXECUTE format('select etl.table_fields (%I) ',owntbl) into row_fields;
+ EXECUTE format('select COORD_W::varchar from  %I where kartid = $1', owntbl)
+   INTO row_values
+   USING    keyv;
+       ret [1]:= array_append(ret, row_values);
+  RETURN ret;
+END;
+    $body$
+LANGUAGE 'plpgsql'
+
+----- кладем друг на друга как масло на хлеб и получаем unpivot
+select u1, u2 FROM unnest(etl.table_fields ('dtp_crash','etl')) u1, 
+unnest(etl.table_values ('dtp_crash','etl','kartid','187568933')) u2
+
+
+
 
