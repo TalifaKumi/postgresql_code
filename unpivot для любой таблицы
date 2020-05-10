@@ -58,8 +58,14 @@ LANGUAGE 'plpgsql'
 
 
 ----- кладем друг на друга как масло на хлеб и получаем unpivot
-select u1, u2 FROM unnest(etl.table_fields ('dtp_crash','etl')) u1, 
-unnest(etl.table_values ('dtp_crash','etl','kartid','187568933')) u2
+
+
+select * from 
+unnest(table_fields ('test')::text[], 
+	   table_values ('test','id',1)::text[])
+
+"col1"	"a1"
+"id"	"1"
 
 
 
