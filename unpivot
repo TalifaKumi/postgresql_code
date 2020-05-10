@@ -1,14 +1,17 @@
---SELECT etl.table_fields ('dtp_crash','etl')
+SELECT table_fields ('test')
 ---- функция возвращает массив столбцов
 
-CREATE OR REPLACE FUNCTION table_fields (tbl varchar, own varchar) RETURNS varchar []  AS
+
+CREATE OR REPLACE FUNCTION table_fields (tbl varchar) RETURNS varchar []  AS
 $body$
 DECLARE
   ret varchar[];
   row varchar;
  curs  CURSOR FOR SELECT  a.attname::varchar  field
     FROM pg_attribute a, pg_class c, pg_type t, pg_namespace n
-    WHERE n.nspname = own AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid AND n.oid = c.relnamespace and c.relname::varchar=tbl
+    WHERE n.nspname = 'public' AND a.attnum > 0 AND a.attrelid = c.oid 
+	AND a.atttypid = t.oid AND n.oid = c.relnamespace 
+	and c.relname::varchar=tbl
     order by 1;
 begin
 open curs;
@@ -22,27 +25,37 @@ END;
     $body$
 LANGUAGE 'plpgsql'
 
---SELECT etl.table_values ('dtp_crash','etl','kartid','187568933')
+SELECT table_values ('test','id',1)
 -- функция возвращает массив строк
 
-CREATE OR REPLACE FUNCTION etl.table_values (tbl varchar, own varchar,  keyf varchar, keyv varchar ) RETURNS varchar []  AS
+CREATE OR REPLACE FUNCTION table_values (tbl text, keyf text, keyv int ) 
+RETURNS varchar []  AS
 $body$
 DECLARE
    ret varchar[];
-   row_fields varchar[];
-   row_values varchar ;
-    owntbl varchar;
+	i int := 1;
+     row varchar;
+	   row_val varchar;
+curs  CURSOR FOR SELECT  a.attname::varchar  field
+    FROM pg_attribute a, pg_class c, pg_type t, pg_namespace n
+    WHERE n.nspname = 'public' AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid AND n.oid = c.relnamespace and c.relname::varchar=tbl
+    order by 1;
 begin
- owntbl := own||'.'||'tbl';
-EXECUTE format('select etl.table_fields (%I) ',owntbl) into row_fields;
- EXECUTE format('select COORD_W::varchar from  %I where kartid = $1', owntbl)
-   INTO row_values
-   USING    keyv;
-       ret [1]:= array_append(ret, row_values);
+open curs;
+  LOOP
+    FETCH FROM curs INTO row;
+    EXIT WHEN NOT FOUND;
+EXECUTE format('select %I from  %I where id = $1', quote_ident(row), quote_ident(tbl))	INTO row_val  USING    keyv;
+  ret := array_append(ret,row_val);
+	   i := i+1;
+  END LOOP;
+
   RETURN ret;
 END;
     $body$
 LANGUAGE 'plpgsql'
+
+
 
 ----- кладем друг на друга как масло на хлеб и получаем unpivot
 select u1, u2 FROM unnest(etl.table_fields ('dtp_crash','etl')) u1, 
