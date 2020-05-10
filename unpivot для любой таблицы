@@ -36,25 +36,27 @@ DECLARE
 	i int := 1;
      row varchar;
 	   row_val varchar;
-curs  CURSOR FOR SELECT  a.attname::varchar  field
+curs_val  CURSOR FOR SELECT  a.attname::varchar  field
     FROM pg_attribute a, pg_class c, pg_type t, pg_namespace n
     WHERE n.nspname = 'public' AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid AND n.oid = c.relnamespace and c.relname::varchar=tbl
     order by 1;
 begin
-open curs;
+open curs_val;
   LOOP
-    FETCH FROM curs INTO row;
+    FETCH FROM curs_val INTO row;
     EXIT WHEN NOT FOUND;
-EXECUTE format('select %I from  %I where id = $1', quote_ident(row), quote_ident(tbl))	INTO row_val  USING    keyv;
+EXECUTE format('select %I from  %I where %I = $1', 
+			   quote_ident(row), quote_ident(tbl), quote_ident(keyf))	
+INTO row_val  USING    keyv;
   ret := array_append(ret,row_val);
 	   i := i+1;
   END LOOP;
+  close curs_val;
 
   RETURN ret;
 END;
     $body$
 LANGUAGE 'plpgsql'
-
 
 
 ----- кладем друг на друга как масло на хлеб и получаем unpivot
