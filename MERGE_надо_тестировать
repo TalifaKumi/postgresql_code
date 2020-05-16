@@ -1,0 +1,37 @@
+create table myTab (pid numeric, sales numeric, status varchar(6));
+create table myTab2 (pid numeric, sales numeric, status varchar(6));
+truncate table myTab;
+truncate table myTab2;
+insert into myTab2 values(1,12,'CURR');
+insert into myTab2 values(2,13,'NEW' );
+insert into myTab2 values(3,15,'CURR');
+insert into myTab  values(2,24,'CURR');
+insert into myTab  values(3, 0,'OBS' );
+insert into myTab  values(4,42,'CURR');
+
+
+WITH 
+del as(
+        delete from mytab2 m2
+        using mytab m
+        where m2.pid=m.pid and m2.sales<m.sales
+        RETURNING m2.*
+),
+upd as (
+   update mytab2 m2 
+   set sales=m2.sales+m.sales, 
+       status=m.status 
+   from mytab m--, del d 
+   where m2.pid=m.pid and m2.pid not in (select pid from del)
+   RETURNING m2.*
+),
+ins as (
+    select pid, 
+           sales,
+           'NEW' 
+    from mytab
+    where pid not in (select pid from mytab2) and pid not in (select pid from upd)
+)
+insert into mytab2
+    select *
+    from ins;
